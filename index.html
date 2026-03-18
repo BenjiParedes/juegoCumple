@@ -33,7 +33,9 @@
         .grid { display: grid; gap: 10px; margin-top: 20px; }
         .gift-btn { background: #21262d; border: 1px solid #30363d; color: white; padding: 20px; border-radius: 12px; font-size: 1.1rem; cursor: pointer; transition: 0.2s; }
         .gift-btn:active { transform: scale(0.95); background: #30363d; }
-        .msg-area { margin-top: 20px; min-height: 60px; font-weight: 500; display: flex; align-items: center; justify-content: center;}
+        
+        /* CORRECCIÓN DE DISEÑO FINAL */
+        .msg-area { margin-top: 20px; min-height: 60px; font-weight: 500; display: block; text-align: center; }
         
         /* --- ANIMACIÓN DE TEMBLOR --- */
         @keyframes sacudon {
@@ -95,14 +97,25 @@
             "Tú y la persona que elijas beben un shot de tequila c/u"
         ];
 
-        // Archivos de audio locales (Asegúrate de tener estos archivos en la misma carpeta)
+        // Archivos de audio locales
         const sonidoVictoria = new Audio('ganar.mp3');
-        const sonidoError = new Audio('perder.mp3');
         const sonidoFinal = new Audio('final.mp3');
+        const sonidoFondo = new Audio('fondo.mp3');
+        sonidoFondo.loop = true; // El sonido de fondo se repite
+
+        // Lista de audios de derrota para elegir al azar
+        const sonidosDerrota = [
+            new Audio('perder1.mp3'),
+            new Audio('perder2.mp3')
+        ];
 
         function empezarJuego() {
             document.getElementById('pantalla-inicio').classList.add('hidden');
             document.getElementById('pantalla-juego').classList.remove('hidden');
+
+            // Reproducimos el fondo al hacer clic (sin la intro)
+            sonidoFondo.volume = 0.4; 
+            sonidoFondo.play().catch(e => console.warn("Audio no disponible:", e));
         }
 
         function jugar() {
@@ -127,18 +140,18 @@
                 acumulado += 5000;
                 msj.innerHTML = "<span style='color:var(--success)'>¡EXCELENTE! Ganaste $5.000 💵</span>";
                 
-                // Efectos Victoria (con protección anti-errores)
                 sonidoVictoria.play().catch(e => console.warn("Audio no disponible:", e));
                 if ("vibrate" in navigator) navigator.vibrate(100);
 
             } else {
-                // Efectos Derrota (Animación + Sonido + Vibración)
                 contenedorJuego.classList.add('shake');
                 
-                sonidoError.play().catch(e => console.warn("Audio no disponible:", e));
+                // Elegimos UNO de los dos audios de derrota al azar
+                const sonidoErrorElegido = sonidosDerrota[Math.floor(Math.random() * sonidosDerrota.length)];
+                sonidoErrorElegido.play().catch(e => console.warn("Audio no disponible:", e));
+                
                 if ("vibrate" in navigator) navigator.vibrate([200, 100, 200]);
 
-                // Elegir y sacar penitencia de la lista
                 const indiceAzar = Math.floor(Math.random() * penitencias.length);
                 const penitenciaElegida = penitencias.splice(indiceAzar, 1)[0];
                 
@@ -151,24 +164,26 @@
                 ronda++;
                 document.getElementById('ronda-text').innerText = `RONDA ${ronda} DE ${maxRondas}`;
             } else {
-                // Lógica del final de la partida
                 document.getElementById('botones').classList.add('hidden');
                 document.getElementById('btn-finalizar').classList.remove('hidden');
                 
-                // Temporizador de 30 segundos
                 temporizadorAuto = setTimeout(irAFinal, 30000);
             }
         }
 
         function irAFinal() {
-            // Cancelamos el temporizador si hizo clic manual
             clearTimeout(temporizadorAuto);
             
             document.getElementById('btn-finalizar').classList.add('hidden');
             document.getElementById('ronda-text').innerText = "¡Juego Terminado!";
-            document.getElementById('mensaje').innerHTML = `<h2>🎊 ¡Felicidades! 🎊</h2>Te llevas <b>$${acumulado.toLocaleString('es-CL')}</b> para tu cuenta.`;
             
-            // Sonido de lluvia de dinero
+            document.getElementById('mensaje').innerHTML = `
+                <h2 style="margin: 0 0 10px 0;">🎊 ¡Felicidades! 🎊</h2>
+                <p style="margin: 0; font-size: 1.1rem; line-height: 1.4;">Te llevas <b>$${acumulado.toLocaleString('es-CL')}</b> para tu cuenta.</p>
+            `;
+            
+            // Apagamos la música de suspenso y ponemos la final
+            sonidoFondo.pause();
             sonidoFinal.play().catch(e => console.warn("Audio no disponible:", e));
         }
     </script>
