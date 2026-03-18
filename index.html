@@ -88,6 +88,7 @@
         let ronda = 1;
         const maxRondas = 3;
         let temporizadorAuto; 
+        let juegoTerminado = false; // Nos avisa si ya estamos en la pantalla de felicitaciones
 
         // Lista global de penitencias para que no se repitan
         let penitencias = [
@@ -100,8 +101,8 @@
         // Archivos de audio locales
         const sonidoVictoria = new Audio('ganar.mp3');
         const sonidoFinal = new Audio('final.mp3');
-        const sonidoFondo = new Audio('fondo.mp3');
-        sonidoFondo.loop = true; // El sonido de fondo se repite
+        const sonidoFondo = new Audio('fondo.mp3'); // Puedes cambiar esto por el link si sigues probando
+        sonidoFondo.loop = true; 
 
         // Lista de audios de derrota para elegir al azar
         const sonidosDerrota = [
@@ -113,7 +114,6 @@
             document.getElementById('pantalla-inicio').classList.add('hidden');
             document.getElementById('pantalla-juego').classList.remove('hidden');
 
-            // Reproducimos el fondo al hacer clic (sin la intro)
             sonidoFondo.volume = 0.4; 
             sonidoFondo.play().catch(e => console.warn("Audio no disponible:", e));
         }
@@ -121,8 +121,10 @@
         function jugar() {
             if (ronda > maxRondas) return;
 
+            // 1. PAUSAMOS EL FONDO AL ELEGIR CAJA
+            sonidoFondo.pause();
+
             let gano = false;
-            // Lógica: Dificultad alta (33%), pero salvavidas en la última si lleva $0
             if (ronda === maxRondas && acumulado === 0) {
                 gano = true;
             } else {
@@ -132,7 +134,6 @@
             const msj = document.getElementById('mensaje');
             const contenedorJuego = document.getElementById('pantalla-juego');
 
-            // Reiniciamos la animación de temblor
             contenedorJuego.classList.remove('shake');
             void contenedorJuego.offsetWidth; 
 
@@ -143,14 +144,23 @@
                 sonidoVictoria.play().catch(e => console.warn("Audio no disponible:", e));
                 if ("vibrate" in navigator) navigator.vibrate(100);
 
+                // 2. CUANDO TERMINE EL EFECTO DE VICTORIA, VUELVE EL FONDO
+                sonidoVictoria.onended = function() {
+                    if (!juegoTerminado) sonidoFondo.play().catch(e => console.warn("Audio no disponible:", e));
+                };
+
             } else {
                 contenedorJuego.classList.add('shake');
                 
-                // Elegimos UNO de los dos audios de derrota al azar
                 const sonidoErrorElegido = sonidosDerrota[Math.floor(Math.random() * sonidosDerrota.length)];
                 sonidoErrorElegido.play().catch(e => console.warn("Audio no disponible:", e));
                 
                 if ("vibrate" in navigator) navigator.vibrate([200, 100, 200]);
+
+                // 2. CUANDO TERMINE LA BURLA DE DERROTA, VUELVE EL FONDO
+                sonidoErrorElegido.onended = function() {
+                    if (!juegoTerminado) sonidoFondo.play().catch(e => console.warn("Audio no disponible:", e));
+                };
 
                 const indiceAzar = Math.floor(Math.random() * penitencias.length);
                 const penitenciaElegida = penitencias.splice(indiceAzar, 1)[0];
@@ -172,6 +182,7 @@
         }
 
         function irAFinal() {
+            juegoTerminado = true; // Bloquea que el fondo vuelva a sonar
             clearTimeout(temporizadorAuto);
             
             document.getElementById('btn-finalizar').classList.add('hidden');
@@ -182,7 +193,7 @@
                 <p style="margin: 0; font-size: 1.1rem; line-height: 1.4;">Te llevas <b>$${acumulado.toLocaleString('es-CL')}</b> para tu cuenta.</p>
             `;
             
-            // Apagamos la música de suspenso y ponemos la final
+            // Apagamos la música de suspenso por si acaso y ponemos la final
             sonidoFondo.pause();
             sonidoFinal.play().catch(e => console.warn("Audio no disponible:", e));
         }
