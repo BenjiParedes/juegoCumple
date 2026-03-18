@@ -118,18 +118,26 @@
             sonidoFondo.play().catch(e => console.warn("Audio no disponible:", e));
         }
 
-        function jugar() {
+function jugar() {
             if (ronda > maxRondas) return;
 
             // 1. PAUSAMOS EL FONDO AL ELEGIR CAJA
             sonidoFondo.pause();
 
             let gano = false;
+
+            // --- NUEVA LÓGICA DE PROBABILIDAD DINÁMICA ---
             if (ronda === maxRondas && acumulado === 0) {
+                // Salvavidas: Si no lleva nada, gana la última sí o sí
                 gano = true;
+            } else if (acumulado === 10000) {
+                // DIFICULTAD MÁXIMA: Si ya lleva 2 buenas, solo tiene 10% de chance
+                gano = Math.random() < 0.10; 
             } else {
+                // Probabilidad normal para el resto de los casos (33%)
                 gano = Math.random() < 0.33; 
             }
+            // ---------------------------------------------
 
             const msj = document.getElementById('mensaje');
             const contenedorJuego = document.getElementById('pantalla-juego');
@@ -144,7 +152,6 @@
                 sonidoVictoria.play().catch(e => console.warn("Audio no disponible:", e));
                 if ("vibrate" in navigator) navigator.vibrate(100);
 
-                // 2. CUANDO TERMINE EL EFECTO DE VICTORIA, VUELVE EL FONDO
                 sonidoVictoria.onended = function() {
                     if (!juegoTerminado) sonidoFondo.play().catch(e => console.warn("Audio no disponible:", e));
                 };
@@ -157,7 +164,6 @@
                 
                 if ("vibrate" in navigator) navigator.vibrate([200, 100, 200]);
 
-                // 2. CUANDO TERMINE LA BURLA DE DERROTA, VUELVE EL FONDO
                 sonidoErrorElegido.onended = function() {
                     if (!juegoTerminado) sonidoFondo.play().catch(e => console.warn("Audio no disponible:", e));
                 };
